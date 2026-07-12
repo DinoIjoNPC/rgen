@@ -20,13 +20,20 @@ app.post('/api/generate-image', async (req, res) => {
       return res.status(400).json({ error: 'Prompt tidak boleh kosong.' });
     }
 
-    // Catatan: grok-2-image saat ini tidak menerima parameter width/height secara
-    // langsung pada endpoint generations (ukuran ditentukan model). Nilai width/height
-    // dikirim dari frontend untuk kebutuhan Roblox (512x512 / 768x432) dan disiapkan
-    // di sini agar mudah diteruskan jika/ketika xAI menambah dukungan resolusi kustom.
+    // Model image generation xAI saat ini bernama "grok-imagine-image-quality"
+    // (sebelumnya "grok-2-image", yang sudah tidak berlaku lagi per rilis Grok Imagine API).
+    // Endpoint mendukung parameter aspect_ratio, jadi kita turunkan dari width/height
+    // yang dikirim frontend (1:1 untuk Icon/Logo, 16:9 untuk Thumbnail).
+    let aspectRatio = '1:1';
+    if (width && height) {
+      const ratio = width / height;
+      aspectRatio = Math.abs(ratio - 16 / 9) < 0.05 ? '16:9' : '1:1';
+    }
+
     const requestBody = {
-      model: 'grok-2-image',
+      model: 'grok-imagine-image-quality',
       prompt: prompt.trim(),
+      aspect_ratio: aspectRatio,
       n: 1
     };
 
@@ -42,9 +49,18 @@ app.post('/api/generate-image', async (req, res) => {
     if (!grokResponse.ok) {
       const errText = await grokResponse.text();
       console.error('Grok API error:', grokResponse.status, errText);
-      return res.status(grokResponse.status).json({
-        error: `Grok API mengembalikan error (status ${grokResponse.status}).`
-      });
+
+      let errMessage = `Grok API mengembalikan error (status ${grokResponse.status}).`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson?.error) {
+          errMessage += ` Detail: ${errJson.error}`;
+        }
+      } catch (parseErr) {
+        // errText bukan JSON valid, gunakan pesan default saja
+      }
+
+      return res.status(grokResponse.status).json({ error: errMessage });
     }
 
     const data = await grokResponse.json();
