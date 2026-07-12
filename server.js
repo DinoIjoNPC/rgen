@@ -3,7 +3,6 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const GROK_API_KEY = process.env.GROK_API_KEY;
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -19,64 +18,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/generate-image', async (req, res) => {
   try {
-    if (!GROK_API_KEY) {
-      return res.status(500).json({ error: 'GROK_API_KEY belum diatur di server.' });
-    }
-
     const { prompt, width, height } = req.body;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return res.status(400).json({ error: 'Prompt tidak boleh kosong.' });
     }
 
-    // Model image generation xAI saat ini bernama "grok-imagine-image-quality"
-    // (sebelumnya "grok-2-image", yang sudah tidak berlaku lagi per rilis Grok Imagine API).
-    // Endpoint mendukung parameter aspect_ratio, jadi kita turunkan dari width/height
-    // yang dikirim frontend (1:1 untuk Icon/Logo, 16:9 untuk Thumbnail).
-    let aspectRatio = '1:1';
-    if (width && height) {
-      const ratio = width / height;
-      aspectRatio = Math.abs(ratio - 16 / 9) < 0.05 ? '16:9' : '1:1';
-    }
+    // Pollinations.ai: layanan gratis, tanpa API key, tanpa langganan.
+    // Endpoint: GET https://image.pollinations.ai/prompt/{prompt}
+    const finalWidth = width || 512;
+    const finalHeight = height || 512;
+    const seed = Math.floor(Math.random() * 1000000);
 
-    const requestBody = {
-      model: 'grok-imagine-image-quality',
-      prompt: prompt.trim(),
-      aspect_ratio: aspectRatio,
-      n: 1
-    };
+    const encodedPrompt = encodeURIComponent(prompt.trim());
+    const imageUrl =
+      `https://image.pollinations.ai/prompt/${encodedPrompt}` +
+      `?width=${finalWidth}&height=${finalHeight}&seed=${seed}&nologo=true&model=flux`;
 
-    const grokResponse = await fetch('https://api.x.ai/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROK_API_KEY}`
-      },
-      body: JSON.stringify(requestBody)
-    });
+    // Pollinations men-generate gambar secara lazy saat URL diakses,
+    // jadi kita cek dulu apakah gambar benar-benar berhasil dibuat
+    // sebelum mengirim URL ke frontend.
+    const checkResponse = await fetch(imageUrl);
 
-    if (!grokResponse.ok) {
-      const errText = await grokResponse.text();
-      console.error('Grok API error:', grokResponse.status, errText);
-
-      let errMessage = `Grok API mengembalikan error (status ${grokResponse.status}).`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (errJson?.error) {
-          errMessage += ` Detail: ${errJson.error}`;
-        }
-      } catch (parseErr) {
-        // errText bukan JSON valid, gunakan pesan default saja
-      }
-
-      return res.status(grokResponse.status).json({ error: errMessage });
-    }
-
-    const data = await grokResponse.json();
-    const imageUrl = data?.data?.[0]?.url;
-
-    if (!imageUrl) {
-      return res.status(502).json({ error: 'Respons Grok tidak berisi URL gambar.' });
+    if (!checkResponse.ok) {
+      console.error('Pollinations error:', checkResponse.status);
+      return res.status(502).json({
+        error: `Layanan gambar mengembalikan error (status ${checkResponse.status}).`
+      });
     }
 
     return res.json({ imageUrl });
