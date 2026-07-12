@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RGen — Penempa Aset Roblox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0A0908;
+    --panel: #16140F;
+    --panel-border: #2A2418;
+    --gold: #D4AF37;
+    --gold-pale: #F2E8B8;
+    --gold-dim: #8A7431;
+    --text-muted: #9A9384;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--black);
+    color: var(--gold-pale);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse at top, rgba(212, 175, 55, 0.06), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(212, 175, 55, 0.04), transparent 60%);
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 14px;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .title-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 56px;
+    margin: 0;
+    letter-spacing: 0.02em;
+    background: linear-gradient(180deg, var(--gold-pale) 0%, var(--gold) 55%, var(--gold-dim) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.05;
+  }
+
+  .subtitle {
+    margin-top: 14px;
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .divider {
+    width: 64px;
+    height: 1px;
+    margin: 28px auto 0;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 28px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 12px;
+  }
+
+  .mode-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .mode-btn {
+    background: var(--black);
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: center;
+  }
+
+  .mode-btn .mode-dim {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--gold-dim);
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  .mode-btn:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold-pale);
+  }
+
+  .mode-btn.active {
+    background: linear-gradient(180deg, var(--gold-pale), var(--gold));
+    border-color: var(--gold);
+    color: var(--black);
+  }
+
+  .mode-btn.active .mode-dim {
+    color: rgba(10, 9, 8, 0.6);
+  }
+
+  .transparent-row {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--black);
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .transparent-row.visible {
+    display: flex;
+  }
+
+  .transparent-label {
+    font-size: 13px;
+    color: var(--gold-pale);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .transparent-label .hint {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--panel-border);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .toggle input:checked + .toggle-slider {
+    background: var(--gold-dim);
+  }
+
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+    background: var(--gold-pale);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+    background: var(--black);
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--gold-pale);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 16px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  textarea::placeholder { color: #5C5546; }
+  textarea:focus { border-color: var(--gold-dim); }
+
+  .btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(180deg, var(--gold-pale), var(--gold));
+    color: var(--black);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    box-shadow: 0 0 24px rgba(212, 175, 55, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-outline {
+    margin-top: 12px;
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: var(--gold-pale);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: none;
+  }
+
+  .btn-outline.visible { display: block; }
+
+  .btn-outline:hover {
+    background: var(--gold-dim);
+    color: var(--black);
+  }
+
+  .canvas-area {
+    margin-top: 36px;
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .canvas-area.ratio-square { aspect-ratio: 1 / 1; }
+  .canvas-area.ratio-wide { aspect-ratio: 16 / 9; }
+
+  .checker-bg {
+    background-image:
+      linear-gradient(45deg, #2A2418 25%, transparent 25%),
+      linear-gradient(-45deg, #2A2418 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2A2418 75%),
+      linear-gradient(-45deg, transparent 75%, #2A2418 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
+
+  .canvas-area img, .canvas-area canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .placeholder {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 24px;
+  }
+
+  .placeholder .mark {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    color: var(--gold-dim);
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .status {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    min-height: 18px;
+  }
+
+  .status.error { color: #C97A5A; }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--panel-border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    margin-top: 48px;
+    text-align: center;
+    font-size: 12px;
+    color: #4A4436;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 40px; }
+    .title-icon { width: 36px; height: 36px; }
+    .wrap { padding: 40px 16px 60px; }
+    .mode-btn { font-size: 10px; padding: 12px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Penempa Aset Visual Roblox</div>
+    <div class="title-row">
+      <svg class="title-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="40" height="40" rx="8" fill="#0A0908" stroke="#D4AF37" stroke-width="2"/>
+        <rect x="14" y="12" width="20" height="20" rx="3" transform="rotate(12 24 24)" fill="none" stroke="#D4AF37" stroke-width="2.2"/>
+        <rect x="14" y="12" width="20" height="20" rx="3" fill="none" stroke="#F2E8B8" stroke-width="1.4"/>
+      </svg>
+      <h1>RGen</h1>
+    </div>
+    <p class="subtitle">Tempa ikon, logo, dan thumbnail Roblox dari sebaris teks.</p>
+    <div class="divider"></div>
+  </header>
+
+  <div class="panel">
+    <label>Jenis Aset</label>
+    <div class="mode-select">
+      <button class="mode-btn active" data-mode="icon">
+        Icon
+        <span class="mode-dim">512×512</span>
+      </button>
+      <button class="mode-btn" data-mode="logo">
+        Logo
+        <span class="mode-dim">512×512</span>
+      </button>
+      <button class="mode-btn" data-mode="thumbnail">
+        Thumbnail
+        <span class="mode-dim">768×432</span>
+      </button>
+    </div>
+
+    <div class="transparent-row visible" id="transparent-row">
+      <div class="transparent-label">
+        Transparent
+        <span class="hint">Latar belakang dihapus otomatis</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="transparent-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <label for="prompt-input">Deskripsi Gambar</label>
+    <textarea id="prompt-input" placeholder="Contoh: pedang emas legendaris dengan permata merah di gagangnya, gaya game fantasi"></textarea>
+    <button class="btn" id="generate-btn">Tempa Gambar</button>
+    <button class="btn-outline" id="download-btn">Unduh Gambar</button>
+  </div>
+
+  <div class="canvas-area ratio-square" id="canvas-area">
+    <div class="placeholder" id="placeholder">
+      <div class="mark">&#9670;</div>
+      Gambar akan muncul di sini
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <footer>Ditenagai oleh Grok Image Generation</footer>
+
+</div>
+
+<script>
+  const BACKEND_URL = '/api/generate-image';
+
+  const MODE_CONFIG = {
+    icon: {
+      label: 'icon',
+      width: 512,
+      height: 512,
+      ratioClass: 'ratio-square',
+      allowTransparent: true,
+      promptSuffix: 'Roblox game icon, single centered subject, bold clean silhouette, simple readable shape at small size, no text, no watermark, professional game asset, square composition'
+    },
+    logo: {
+      label: 'logo',
+      width: 512,
+      height: 512,
+      ratioClass: 'ratio-square',
+      allowTransparent: true,
+      promptSuffix: 'Roblox group or game logo, bold emblematic design, strong silhouette, centered composition, no text, no watermark, professional branding asset, square composition'
+    },
+    thumbnail: {
+      label: 'thumbnail',
+      width: 768,
+      height: 432,
+      ratioClass: 'ratio-wide',
+      allowTransparent: false,
+      promptSuffix: 'Roblox game thumbnail, wide cinematic composition, dynamic scene, vivid lighting, eye-catching game store cover art, no text, no watermark, 16:9 composition'
+    }
+  };
+
+  const CHROMA_KEY = { r: 0, g: 255, b: 0 };
+
+  let currentMode = 'icon';
+  let lastResultBlobUrl = null;
+  let lastResultIsCanvas = false;
+
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const transparentRow = document.getElementById('transparent-row');
+  const transparentToggle = document.getElementById('transparent-toggle');
+  const promptInput = document.getElementById('prompt-input');
+  const generateBtn = document.getElementById('generate-btn');
+  const downloadBtn = document.getElementById('download-btn');
+  const canvasArea = document.getElementById('canvas-area');
+  const statusEl = document.getElementById('status');
+
+  function setStatus(message, isError) {
+    statusEl.textContent = message || '';
+    statusEl.className = 'status' + (isError ? ' error' : '');
+  }
+
+  function showPlaceholder(text) {
+    canvasArea.classList.remove('checker-bg');
+    canvasArea.innerHTML = '<div class="placeholder"><div class="mark">&#9670;</div>' + text + '</div>';
+  }
+
+  function showSpinner() {
+    canvasArea.classList.remove('checker-bg');
+    canvasArea.innerHTML = '<div class="spinner"></div>';
+  }
+
+  function applyRatioClass() {
+    const config = MODE_CONFIG[currentMode];
+    canvasArea.classList.remove('ratio-square', 'ratio-wide');
+    canvasArea.classList.add(config.ratioClass);
+  }
+
+  function updateModeUI() {
+    modeButtons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.mode === currentMode);
+    });
+
+    const config = MODE_CONFIG[currentMode];
+    transparentRow.classList.toggle('visible', config.allowTransparent);
+
+    if (!config.allowTransparent) {
+      transparentToggle.checked = false;
+    }
+
+    applyRatioClass();
+  }
+
+  modeButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      currentMode = btn.dataset.mode;
+      updateModeUI();
+    });
+  });
+
+  function buildPrompt(userPrompt, isTransparent) {
+    const config = MODE_CONFIG[currentMode];
+    let fullPrompt = userPrompt + '. ' + config.promptSuffix;
+
+    if (isTransparent) {
+      fullPrompt += '. Subject isolated on a flat solid pure green background (chroma key green #00FF00), even lighting, no shadow cast on background, background must be a single uniform flat color with no texture or gradient';
+    }
+
+    return fullPrompt;
+  }
+
+  function colorDistance(r1, g1, b1, r2, g2, b2) {
+    return Math.sqrt(
+      Math.pow(r1 - r2, 2) +
+      Math.pow(g1 - g2, 2) +
+      Math.pow(b1 - b2, 2)
+    );
+  }
+
+  function removeChromaKey(image) {
+    return new Promise(function (resolve) {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const threshold = 90;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const dist = colorDistance(r, g, b, CHROMA_KEY.r, CHROMA_KEY.g, CHROMA_KEY.b);
+
+        if (dist < threshold) {
+          data[i + 3] = 0;
+        } else if (dist < threshold + 40) {
+          const fade = (dist - threshold) / 40;
+          data[i + 3] = Math.round(data[i + 3] * fade);
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas);
+    });
+  }
+
+  function showImageResult(url) {
+    canvasArea.classList.remove('checker-bg');
+    canvasArea.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Gambar hasil generate';
+    canvasArea.appendChild(img);
+  }
+
+  function showCanvasResult(canvas) {
+    canvasArea.classList.add('checker-bg');
+    canvasArea.innerHTML = '';
+    canvasArea.appendChild(canvas);
+  }
+
+  function fileNameFor(isTransparent) {
+    const suffix = isTransparent ? '-transparent' : '';
+    return 'rgen-' + currentMode + suffix + '.png';
+  }
+
+  function enableDownload(isCanvas, sourceUrlOrCanvas) {
+    downloadBtn.classList.add('visible');
+    lastResultIsCanvas = isCanvas;
+
+    if (isCanvas) {
+      lastResultBlobUrl = sourceUrlOrCanvas;
+    } else {
+      lastResultBlobUrl = sourceUrlOrCanvas;
+    }
+  }
+
+  downloadBtn.addEventListener('click', function () {
+    const isTransparent = transparentToggle.checked && MODE_CONFIG[currentMode].allowTransparent;
+    const link = document.createElement('a');
+    link.download = fileNameFor(isTransparent);
+
+    if (lastResultIsCanvas) {
+      link.href = lastResultBlobUrl.toDataURL('image/png');
+    } else {
+      link.href = lastResultBlobUrl;
+    }
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  async function generateImage() {
+    const userPrompt = promptInput.value.trim();
+
+    if (!userPrompt) {
+      setStatus('Tuliskan deskripsi terlebih dahulu.', true);
+      return;
+    }
+
+    const config = MODE_CONFIG[currentMode];
+    const isTransparent = transparentToggle.checked && config.allowTransparent;
+
+    generateBtn.disabled = true;
+    downloadBtn.classList.remove('visible');
+    setStatus('Sedang menempa gambar...');
+    showSpinner();
+    applyRatioClass();
+
+    try {
+      const fullPrompt = buildPrompt(userPrompt, isTransparent);
+
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          width: config.width,
+          height: config.height
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'Permintaan gagal diproses server.');
+      }
+
+      const data = await response.json();
+
+      if (!data.imageUrl) {
+        throw new Error('Server tidak mengembalikan gambar.');
+      }
+
+      if (isTransparent) {
+        setStatus('Menghapus latar belakang...');
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        await new Promise(function (resolve, reject) {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = data.imageUrl;
+        });
+
+        const resultCanvas = await removeChromaKey(img);
+        showCanvasResult(resultCanvas);
+        enableDownload(true, resultCanvas);
+      } else {
+        showImageResult(data.imageUrl);
+        enableDownload(false, data.imageUrl);
+      }
+
+      setStatus('Gambar berhasil dibuat.');
+    } catch (err) {
+      showPlaceholder('Gagal membuat gambar');
+      setStatus(err.message || 'Terjadi kesalahan, coba lagi.', true);
+    } finally {
+      generateBtn.disabled = false;
+    }
+  }
+
+  generateBtn.addEventListener('click', generateImage);
+
+  promptInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      generateImage();
+    }
+  });
+
+  updateModeUI();
+</script>
+
+</body>
+</html>
