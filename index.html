@@ -655,6 +655,16 @@
     showSpinner();
     applyRatioClass();
 
+    const CLIENT_TIMEOUT_MS = 90000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function () {
+      controller.abort();
+    }, CLIENT_TIMEOUT_MS);
+
+    const progressTimer = setTimeout(function () {
+      setStatus('Masih menempa, mohon tunggu sebentar lagi...');
+    }, 12000);
+
     try {
       const fullPrompt = buildPrompt(userPrompt, isTransparent);
 
@@ -665,8 +675,12 @@
           prompt: fullPrompt,
           width: config.width,
           height: config.height
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+      clearTimeout(progressTimer);
 
       if (!response.ok) {
         const errData = await response.json().catch(function () { return {}; });
@@ -701,8 +715,16 @@
 
       setStatus('Gambar berhasil dibuat.');
     } catch (err) {
+      clearTimeout(timeoutId);
+      clearTimeout(progressTimer);
+
       showPlaceholder('Gagal membuat gambar');
-      setStatus(err.message || 'Terjadi kesalahan, coba lagi.', true);
+
+      if (err.name === 'AbortError') {
+        setStatus('Waktu tunggu habis. Layanan gambar sedang sibuk, coba lagi.', true);
+      } else {
+        setStatus(err.message || 'Terjadi kesalahan, coba lagi.', true);
+      }
     } finally {
       generateBtn.disabled = false;
     }
