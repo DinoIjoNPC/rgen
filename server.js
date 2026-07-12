@@ -16,45 +16,70 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/api/generate-image', async (req, res) => {
+function buildPollinationsUrl(prompt, width, height, seed) {
+  const encodedPrompt = encodeURIComponent(prompt.trim());
+  return (
+    `https://image.pollinations.ai/prompt/${encodedPrompt}` +
+    `?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
+  );
+}
+
+async function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const { prompt, width, height } = req.body;
-
-    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ error: 'Prompt tidak boleh kosong.' });
-    }
-
-    // Pollinations.ai: layanan gratis, tanpa API key, tanpa langganan.
-    // Endpoint: GET https://image.pollinations.ai/prompt/{prompt}
-    const finalWidth = width || 512;
-    const finalHeight = height || 512;
-    const seed = Math.floor(Math.random() * 1000000);
-
-    const encodedPrompt = encodeURIComponent(prompt.trim());
-    const imageUrl =
-      `https://image.pollinations.ai/prompt/${encodedPrompt}` +
-      `?width=${finalWidth}&height=${finalHeight}&seed=${seed}&nologo=true&model=flux`;
-
-    // Pollinations men-generate gambar secara lazy saat URL diakses,
-    // jadi kita cek dulu apakah gambar benar-benar berhasil dibuat
-    // sebelum mengirim URL ke frontend.
-    const checkResponse = await fetch(imageUrl);
-
-    if (!checkResponse.ok) {
-      console.error('Pollinations error:', checkResponse.status);
-      return res.status(502).json({
-        error: `Layanan gambar mengembalikan error (status ${checkResponse.status}).`
-      });
-    }
-
-    return res.json({ imageUrl });
-
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
   } catch (err) {
-    console.error('Server error:', err);
-    return res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
+    clearTimeout(timeoutId);
+    throw err;
   }
+}
+
+app.post('/api/generate-image', async (req, res) => {
+  const { prompt, width, height } = req.body;
+
+  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).json({ error: 'Prompt tidak boleh kosong.' });
+  }
+
+  const finalWidth = width || 512;
+  const finalHeight = height || 512;
+
+  const MAX_ATTEMPTS = 3;
+  const TIMEOUT_MS = 25000;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const seed = Math.floor(Math.random() * 1000000);
+    const imageUrl = buildPollinationsUrl(prompt, finalWidth, finalHeight, seed);
+
+    try {
+      const checkResponse = await fetchWithTimeout(imageUrl, TIMEOUT_MS);
+
+      if (checkResponse.ok) {
+        return res.json({ imageUrl });
+      }
+
+      console.error(`Percobaan ${attempt}: Pollinations mengembalikan status ${checkResponse.status}`);
+    } catch (err) {
+      const reason = err.name === 'AbortError' ? 'timeout' : err.message;
+      console.error(`Percobaan ${attempt}: gagal (${reason})`);
+    }
+
+    // Kalau ini bukan percobaan terakhir, tunggu sebentar sebelum coba lagi
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+  }
+
+  return res.status(504).json({
+    error: 'Layanan gambar sedang lambat merespons. Coba lagi dalam beberapa saat.'
+  });
 });
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
 });
+          
